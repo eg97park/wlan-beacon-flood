@@ -23,7 +23,7 @@ typedef struct WLAN_BEACON_FLOOD_PAKCET {
     u_char* packet;
     uint64_t size;
     std::string ssid;
-} __attribute__((__packed__)) beacon_flood_pkt;
+} beacon_flood_pkt;
 
 class BeaconFlood
 {
@@ -39,11 +39,11 @@ private:
     std::string get_random_ssid(size_t length);
 public:
     BeaconFlood();
-    BeaconFlood(const uint8_t ap_mac_addr[6]);
     ~BeaconFlood();
 
     void set_ap_mac_addr(const uint8_t ap_mac_addr[6]);
-    void set_cap_info(const uint16_t cap_info);
+    void set_beacon_interval(const uint16_t binterval);
     void set_ssid(const std::string ssid);
     beacon_flood_pkt* get_flood_pkt();
+    beacon_flood_pkt* get_flood_pkt(const std::string ssid);
 };
