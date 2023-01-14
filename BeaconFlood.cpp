@@ -58,9 +58,8 @@ void BeaconFlood::set_beacon_interval(const uint16_t binterval)
     this->wlm_hdr.binterval = binterval;
 }
 
-beacon_flood_pkt* BeaconFlood::get_flood_pkt()
+beacon_flood_pkt* BeaconFlood::copy_raw_to_packet()
 {
-    this->ssid = std::string("GILGIL_TEST_") + this->get_random_ssid(12);
     uint8_t ssid_length = this->ssid.length();
 
     uint64_t flood_pkt_size = sizeof(this->rtap_hdr) + 
@@ -117,71 +116,18 @@ beacon_flood_pkt* BeaconFlood::get_flood_pkt()
     );
     flood_pkt->ssid = this->ssid;
     return flood_pkt;
+}
+
+beacon_flood_pkt* BeaconFlood::get_flood_pkt()
+{
+    this->ssid = std::string("GILGIL_TEST_") + this->get_random_ssid(12);
+    beacon_flood_pkt* pkt = copy_raw_to_packet();
+    return pkt;
 }
 
 beacon_flood_pkt* BeaconFlood::get_flood_pkt(const std::string ssid)
 {
     this->ssid = ssid;
-    uint8_t ssid_length = this->ssid.length();
-
-    uint64_t flood_pkt_size = sizeof(this->rtap_hdr) + 
-        sizeof(this->beacon_fhdr) + 
-        sizeof(this->wlm_hdr) + 
-        sizeof(TAG_NUMBER_SSID) + 
-        sizeof(ssid_length) + 
-        sizeof(char) * ssid_length + 
-        sizeof(TAG_SUPPORTED_RATES) + 
-        sizeof(TAG_DS_PARAM_SET);
-
-    beacon_flood_pkt* flood_pkt = (beacon_flood_pkt*)malloc(sizeof(beacon_flood_pkt));
-    flood_pkt->size = flood_pkt_size;
-    flood_pkt->packet = (u_char*)calloc(flood_pkt_size, sizeof(uint8_t));
-    std::memcpy(
-        flood_pkt->packet,
-        &(this->rtap_hdr),
-        sizeof(this->rtap_hdr)
-    );
-    std::memcpy(
-        flood_pkt->packet + sizeof(this->rtap_hdr),
-        &(this->beacon_fhdr),
-        sizeof(this->beacon_fhdr)
-    );
-    std::memcpy(
-        flood_pkt->packet + sizeof(this->rtap_hdr) + sizeof(this->beacon_fhdr),
-        &(this->wlm_hdr),
-        sizeof(this->wlm_hdr)
-    );
-    std::memcpy(
-        flood_pkt->packet + sizeof(this->rtap_hdr) + sizeof(this->beacon_fhdr) + sizeof(this->wlm_hdr),
-        &TAG_NUMBER_SSID,
-        sizeof(TAG_NUMBER_SSID)
-    );
-    std::memcpy(
-        flood_pkt->packet + sizeof(this->rtap_hdr) + sizeof(this->beacon_fhdr) + sizeof(this->wlm_hdr) + sizeof(TAG_NUMBER_SSID),
-        &ssid_length,
-        sizeof(ssid_length)
-    );
-    std::memcpy(
-        flood_pkt->packet + sizeof(this->rtap_hdr) + sizeof(this->beacon_fhdr) + sizeof(this->wlm_hdr) + sizeof(TAG_NUMBER_SSID) + sizeof(ssid_length),
-        this->ssid.c_str(),
-        sizeof(char) * ssid_length
-    );
-    std::memcpy(
-        flood_pkt->packet + sizeof(this->rtap_hdr) + sizeof(this->beacon_fhdr) + sizeof(this->wlm_hdr) + sizeof(TAG_NUMBER_SSID) + sizeof(ssid_length) + sizeof(char) * ssid_length,
-        TAG_SUPPORTED_RATES,
-        sizeof(TAG_SUPPORTED_RATES)
-    );
-    std::memcpy(
-        flood_pkt->packet + sizeof(this->rtap_hdr) + sizeof(this->beacon_fhdr) + sizeof(this->wlm_hdr) + sizeof(TAG_NUMBER_SSID) + sizeof(ssid_length) + sizeof(char) * ssid_length + sizeof(TAG_SUPPORTED_RATES),
-        TAG_DS_PARAM_SET,
-        sizeof(TAG_DS_PARAM_SET)
-    );
-    flood_pkt->ssid = this->ssid;
-    return flood_pkt;
-}
-
-void BeaconFlood::set_ssid(const std::string ssid)
-{
-    this->ssid = ssid;
-    return;
+    beacon_flood_pkt* pkt = copy_raw_to_packet();
+    return pkt;
 }

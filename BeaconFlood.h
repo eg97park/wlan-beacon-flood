@@ -33,17 +33,19 @@ private:
     dot11_wlm_hdr wlm_hdr;
     std::string ssid;
 
+    beacon_flood_pkt* copy_raw_to_packet();
+
     /**
      * @ref https://stackoverflow.com/questions/47977829/generate-a-random-string-in-c11
     */
     std::string get_random_ssid(size_t length);
+
 public:
     BeaconFlood();
     ~BeaconFlood();
 
     void set_ap_mac_addr(const uint8_t ap_mac_addr[6]);
     void set_beacon_interval(const uint16_t binterval);
-    void set_ssid(const std::string ssid);
     beacon_flood_pkt* get_flood_pkt();
     beacon_flood_pkt* get_flood_pkt(const std::string ssid);
 };

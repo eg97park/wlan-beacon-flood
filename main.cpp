@@ -83,6 +83,7 @@ void thread_function(pcap_t* handle)
     {
         sleep(0);
         beacon_flood_pkt* flood_pkt = (*flood_pkt_generator).get_flood_pkt();
+        // beacon_flood_pkt* flood_pkt = (*flood_pkt_generator).get_flood_pkt("TTTEESSSTT");
 g_pcap_handler_mutex.lock();
         printf("Thread [0x%x] generated SSID: %s\n", std::this_thread::get_id(), flood_pkt->ssid.c_str());
         int res = pcap_sendpacket(handle, flood_pkt->packet, flood_pkt->size);
