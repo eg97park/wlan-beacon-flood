@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
@@ -183,8 +185,8 @@ typedef struct ieee80211_radiotap_header {
  */
 typedef struct ieee80211_base_frame {
     uint16_t fctl_field;
-    uint16_t flags;
-} __attribute__((__packed__)) dot11_base_hdr;
+    uint16_t duration;
+} __attribute__((__packed__)) dot11_base_fhdr;
 
 
 /**
@@ -192,12 +194,12 @@ typedef struct ieee80211_base_frame {
  * 
  */
 typedef struct ieee80211_beacon_frame {
-    dot11_base_hdr base;
+    dot11_base_fhdr base;
     uint8_t rcv_addr[6];
     uint8_t src_addr[6];
     uint8_t bssid[6];
     uint16_t frag_seq_num;
-} __attribute__((__packed__)) dot11_beacon_hdr;
+} __attribute__((__packed__)) dot11_beacon_fhdr;
 
 
 /**
@@ -205,12 +207,12 @@ typedef struct ieee80211_beacon_frame {
  * 
  */
 typedef struct ieee80211_data_frame {
-    dot11_base_hdr base;
+    dot11_base_fhdr base;
     uint8_t rcv_addr[6];
     uint8_t bssid[6];
     uint8_t src_addr[6];
     uint16_t frag_seq_num;
-} __attribute__((__packed__)) dot11_data_hdr;
+} __attribute__((__packed__)) dot11_data_fhdr;
 
 
 /**
@@ -221,17 +223,6 @@ typedef struct ieee80211_wireless_management_header {
     uint64_t timestamp;
     uint16_t binterval;
     uint16_t cap_info;
-    
-    /*
-    uint8_t* tag_addr()
-    {
-        return (
-            (uint8_t*)(&(this->timestamp)) +
-            sizeof(this->binterval) + 
-            sizeof(this->cap_info)
-        );
-    }
-    */
 } __attribute__((__packed__)) dot11_wlm_hdr;
 
 
@@ -241,7 +232,7 @@ typedef struct ieee80211_wireless_management_header {
  */
 typedef struct fake_ieee80211_beacon_packet {
     dot11_radiotap_hdr radiotap_hdr;
-    dot11_beacon_hdr beacon_hdr;
+    dot11_beacon_fhdr beacon_hdr;
     dot11_wlm_hdr wlm_hdr;
 } __attribute__((__packed__)) fake_dot11_bpkt;
 
