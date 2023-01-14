@@ -33,3 +33,9 @@
 
 # output
 beacon-flood
+
+# samples
+*.pcap
+
+# vscode settings
+*.json
