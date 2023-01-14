@@ -222,6 +222,7 @@ typedef struct ieee80211_wireless_management_header {
     uint16_t binterval;
     uint16_t cap_info;
     
+    /*
     uint8_t* tag_addr()
     {
         return (
@@ -230,6 +231,7 @@ typedef struct ieee80211_wireless_management_header {
             sizeof(this->cap_info)
         );
     }
+    */
 } __attribute__((__packed__)) dot11_wlm_hdr;
 
 
