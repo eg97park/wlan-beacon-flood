@@ -85,7 +85,7 @@ beacon_flood_pkt* BeaconFlood::get_flood_pkt()
 {
     this->ssid = std::string("GILGIL_TEST_") + this->get_random_ssid(12);
     uint8_t ssid_length = this->ssid.length();
-    printf("SSID: %s was generated.\n", this->ssid.c_str());
+    //printf("SSID: %s was generated.\n", this->ssid.c_str());
 
     uint64_t flood_pkt_size = sizeof(this->rtap_hdr) + 
         sizeof(this->beacon_fhdr) + 
@@ -139,5 +139,6 @@ beacon_flood_pkt* BeaconFlood::get_flood_pkt()
         TAG_DS_PARAM_SET,
         sizeof(TAG_DS_PARAM_SET)
     );
+    flood_pkt->ssid = this->ssid;
     return flood_pkt;
 }

@@ -22,6 +22,7 @@ const std::string random_ssid_pool("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh
 typedef struct WLAN_BEACON_FLOOD_PAKCET {
     u_char* packet;
     uint64_t size;
+    std::string ssid;
 } __attribute__((__packed__)) beacon_flood_pkt;
 
 class BeaconFlood
