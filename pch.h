@@ -20,6 +20,9 @@
 #include <vector>
 #include <map>
 
+#include <fstream>
+#include <sstream>
+
 #include <netinet/in.h>
 
 #include <pcap.h>

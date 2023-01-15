@@ -20,6 +20,13 @@ const auto CPU_COUNT = std::thread::hardware_concurrency();
 std::mutex g_pcap_handler_mutex;
 
 /**
+ * @brief ssid list 파일을 읽어, 목록을 반환하는 함수.
+ * 
+ * @param file_path ssid list 파일 경로
+*/
+std::vector<std::string> read_ssid_list(char* file_path);
+
+/**
  * @brief 사용법을 출력하는 함수.
  * 
  * @param signal 처리할 signal 번호
@@ -31,7 +38,7 @@ void signal_handler(int signal);
  * 
  * @param handle pcap 핸들러
  */
-void thread_function(pcap_t* handle);
+void thread_function(std::vector<std::string>& ssid_list, pcap_t* handle);
 
 int main(int argc, char* argv[]) {
 
@@ -45,11 +52,14 @@ int main(int argc, char* argv[]) {
     sigaction(SIGINT, &sigIntHandler, NULL);
     
     Param param = {
-        .dev_ = NULL
+        .dev_ = NULL,
+        .file_ = NULL
     };
 
     if (!parse(&param, argc, argv))
         return -1;
+
+    std::vector<std::string> ssid_list = read_ssid_list(param.file_);
 
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_t* handle = pcap_open_live(param.dev_, BUFSIZ, 1, 1000, errbuf);
@@ -58,11 +68,10 @@ int main(int argc, char* argv[]) {
         return -1;
     }
     
-    // thread 관리용 벡터.
     std::vector<std::thread> thread_pool;
     for (size_t i = 0; i < CPU_COUNT; i++)
     {
-        thread_pool.push_back(std::thread(thread_function, std::ref(handle)));
+        thread_pool.push_back(std::thread(thread_function, std::ref(ssid_list), std::ref(handle)));
     }
     
     // thread 종료.
@@ -76,6 +85,24 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
+std::vector<std::string> read_ssid_list(char* file_path)
+{
+    std::vector<std::string> ssid_list;
+    std::ifstream ifs(file_path);
+
+    std::string ssid;
+    while (std::getline(ifs, ssid))
+    {
+        std::istringstream iss(ssid);
+        if (!(iss >> ssid))
+        {
+            break;
+        }
+        ssid_list.push_back(ssid);
+    }
+    return ssid_list;
+}
+
 void signal_handler(int signal)
 {
     if (signal == SIGINT)
@@ -86,31 +113,32 @@ void signal_handler(int signal)
     return;
 }
 
-void thread_function(pcap_t* handle)
+void thread_function(std::vector<std::string>& ssid_list, pcap_t* handle)
 {
     BeaconFlood* flood_pkt_generator = new BeaconFlood();
     while (!g_req_thread_exit)
     {
         sleep(0);
+        for (std::vector<std::string>::iterator it = ssid_list.begin(); it != ssid_list.end(); ++it)
+        {
+            beacon_flood_pkt* flood_pkt = (*flood_pkt_generator).get_flood_pkt(*it);
 
-        beacon_flood_pkt* flood_pkt = (*flood_pkt_generator).get_random_flood_pkt();
-        // beacon_flood_pkt* flood_pkt = (*flood_pkt_generator).get_flood_pkt("TTTEESSSTT");
+    g_pcap_handler_mutex.lock();
+            printf("generated SSID: %s\n", flood_pkt->ssid.c_str());
+            int res = pcap_sendpacket(handle, flood_pkt->packet, flood_pkt->size);
+    g_pcap_handler_mutex.unlock();
 
-g_pcap_handler_mutex.lock();
-        printf("generated SSID: %s\n", flood_pkt->ssid.c_str());
-        int res = pcap_sendpacket(handle, flood_pkt->packet, flood_pkt->size);
-g_pcap_handler_mutex.unlock();
-
-        if (res != 0) {
-            fprintf(stderr, "pcap_sendpacket error=%s\n", pcap_geterr(handle));
-            pcap_close(handle);
-            return;
+            if (res != 0) {
+                fprintf(stderr, "pcap_sendpacket error=%s\n", pcap_geterr(handle));
+                pcap_close(handle);
+                return;
+            }
+            
+            free(flood_pkt->packet);
+            flood_pkt->packet = nullptr;
+            free(flood_pkt);
+            flood_pkt = nullptr;
         }
-        
-        free(flood_pkt->packet);
-        flood_pkt->packet = nullptr;
-        free(flood_pkt);
-        flood_pkt = nullptr;
     }
     delete flood_pkt_generator;
     return;

@@ -4,18 +4,19 @@
 
 void usage(char* argv[])
 {
-    printf("syntax: %s <interface>\n", argv[0]);
-    printf("sample: %s wlp45s0\n", argv[0]);
+    printf("syntax: %s <interface> <ssid-list-file>\n", argv[0]);
+    printf("sample: %s wlp45s0 ssid-list.txt\n", argv[0]);
 }
 
 
 bool parse(Param* param, int argc, char* argv[])
 {
-    if (argc != 2) {
+    if (argc != 3) {
         usage(argv);
         return false;
     }
     param->dev_ = argv[1];
+    param->file_ = argv[2];
     return true;
 }
 

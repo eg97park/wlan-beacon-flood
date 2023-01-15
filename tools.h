@@ -10,11 +10,12 @@ void usage(char* argv[]);
 
 
 /**
- * @brief 디버깅 플래그용?
+ * @brief 인자 저장용 구조체.
  * 
  */
 typedef struct {
     char* dev_;
+    char* file_;
 } __attribute__((__packed__)) Param;
 
 

@@ -181,6 +181,15 @@ beacon_flood_pkt* BeaconFlood::get_random_flood_pkt()
 beacon_flood_pkt* BeaconFlood::get_flood_pkt(const std::string& ssid)
 {
     this->ssid = ssid;
+
+    uint8_t* random_mac_addr = this->get_random_mac_addr();
+    for (size_t i = 0; i < 6; i++)
+    {
+        this->beacon_fhdr.src_addr[i] = random_mac_addr[i];
+        this->beacon_fhdr.bssid[i] = random_mac_addr[i];
+    }
+    free(random_mac_addr);
+    
     beacon_flood_pkt* pkt = make_flood_packet();
     return pkt;
 }
