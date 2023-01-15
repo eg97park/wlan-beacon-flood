@@ -1,31 +1,36 @@
-#include <pcap.h>
-#include <stdbool.h>
-#include <stdio.h>
+#include "pch.h"
 
-#include <stddef.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <memory.h>
-#include <signal.h>
-
-#include <unistd.h>
-
-#include <string>
-#include <vector>
-#include <thread>
-#include <mutex>
-
-#include "wlanhdr.h"
 #include "tools.h"
 #include "BeaconFlood.h"
 
 
-volatile sig_atomic_t REQ_THREAD_EXIT = 0;
-const auto cpu_count = std::thread::hardware_concurrency();
+/**
+ * @brief thread 종료용 플래그.
+*/
+volatile sig_atomic_t g_req_thread_exit = 0;
+
+/**
+ * @brief 생성할 thread 개수.
+*/
+const auto CPU_COUNT = std::thread::hardware_concurrency();
+
+/**
+ * @brief thread mutex.
+*/
 std::mutex g_pcap_handler_mutex;
 
+/**
+ * @brief 사용법을 출력하는 함수.
+ * 
+ * @param signal 처리할 signal 번호
+ */
 void signal_handler(int signal);
 
+/**
+ * @brief thread 돌릴 함수.
+ * 
+ * @param handle pcap 핸들러
+ */
 void thread_function(pcap_t* handle);
 
 int main(int argc, char* argv[]) {
@@ -53,13 +58,15 @@ int main(int argc, char* argv[]) {
         return -1;
     }
     
+    // thread 관리용 벡터.
     std::vector<std::thread> thread_pool;
-    for (size_t i = 0; i < cpu_count; i++)
+    for (size_t i = 0; i < CPU_COUNT; i++)
     {
         thread_pool.push_back(std::thread(thread_function, std::ref(handle)));
     }
     
-    for (std::vector<std::thread>::iterator it = thread_pool.begin(); it != thread_pool.end(); it++)
+    // thread 종료.
+    for (std::vector<std::thread>::iterator it = thread_pool.begin(); it != thread_pool.end(); ++it)
     {
         (*it).join();
     }
@@ -71,30 +78,39 @@ int main(int argc, char* argv[]) {
 
 void signal_handler(int signal)
 {
-    printf("SIGINT was detected. Start cleaning...\n");
-    REQ_THREAD_EXIT = 1;
+    if (signal == SIGINT)
+    {
+        printf("SIGINT was detected. Start cleaning...\n");
+        g_req_thread_exit = 1;
+    }
     return;
 }
 
 void thread_function(pcap_t* handle)
 {
     BeaconFlood* flood_pkt_generator = new BeaconFlood();
-    while (!REQ_THREAD_EXIT)
+    while (!g_req_thread_exit)
     {
         sleep(0);
-        beacon_flood_pkt* flood_pkt = (*flood_pkt_generator).get_flood_pkt();
+
+        beacon_flood_pkt* flood_pkt = (*flood_pkt_generator).get_random_flood_pkt();
         // beacon_flood_pkt* flood_pkt = (*flood_pkt_generator).get_flood_pkt("TTTEESSSTT");
+
 g_pcap_handler_mutex.lock();
-        printf("Thread [0x%x] generated SSID: %s\n", std::this_thread::get_id(), flood_pkt->ssid.c_str());
+        printf("generated SSID: %s\n", flood_pkt->ssid.c_str());
         int res = pcap_sendpacket(handle, flood_pkt->packet, flood_pkt->size);
 g_pcap_handler_mutex.unlock();
+
         if (res != 0) {
             fprintf(stderr, "pcap_sendpacket error=%s\n", pcap_geterr(handle));
             pcap_close(handle);
             return;
         }
+        
         free(flood_pkt->packet);
+        flood_pkt->packet = nullptr;
         free(flood_pkt);
+        flood_pkt = nullptr;
     }
     delete flood_pkt_generator;
     return;
