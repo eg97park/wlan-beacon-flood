@@ -1,14 +1,4 @@
-#pragma once
-
-#include <cstdio>
-#include <cstdlib>
-#include <cstdint>
-#include <cstring>
-
-#include <vector>
-#include <map>
-
-#include <netinet/in.h>
+#include "pch.h"
 
 
 const uint16_t TYPE_BEACON_FRAME = 0x80;
@@ -20,10 +10,7 @@ const size_t DOT11_WLANM_FIXED_PARAM_SIZE = 12;
 const size_t DOT11_WLANM_TAG_NUMBER_SIZE = 1;
 const size_t DOT11_WLANM_TAG_LENGTH_SIZE = 1;
 
-
-#pragma pack(1)
-
-
+#pragma pack(push, 1)
 /**
  * @brief radiotap present bit 파싱용 enum.
  * 
@@ -245,3 +232,4 @@ const uint8_t BROADCAST_MAC_ADDR[6] = {
     0xff,
     0xff
 };
+#pragma pack(pop)
