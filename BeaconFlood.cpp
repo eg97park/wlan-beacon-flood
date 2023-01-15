@@ -19,11 +19,8 @@ const dot11_radiotap_hdr BeaconFlood::rtap_hdr = {
 */
 std::string BeaconFlood::get_random_ssid(size_t length)
 {
-    std::string ssid_cand = std::string(random_ssid_pool);
-    std::random_device rd;
-    std::mt19937_64 generator(rd());
-    std::shuffle(ssid_cand.begin(), ssid_cand.end(), generator);
-    return ssid_cand.substr(0, length);
+    std::shuffle(this->random_ssid_pool.begin(), this->random_ssid_pool.end(), this->gen);
+    return this->random_ssid_pool.substr(0, length);
 }
 
 /**
@@ -52,13 +49,17 @@ void BeaconFlood::init_flood_pkt()
 BeaconFlood::BeaconFlood()
 {
     this->gen = std::mt19937(rd());
-    this->dis = std::uniform_int_distribution<size_t>(0, 32);
+    this->dis_ssid = std::uniform_int_distribution<size_t>(0, 32);
+
+    this->random_ssid_pool = RANDOM_SSID_CHAR_POOL;
 
     this->init_flood_pkt();
+
+    uint8_t* random_mac_addr = this->get_random_mac_addr();
     for (size_t i = 0; i < 6; i++)
     {
-        this->beacon_fhdr.src_addr[i] = SAMPLE_MAC_ADDR[i];
-        this->beacon_fhdr.bssid[i] = SAMPLE_MAC_ADDR[i];
+        this->beacon_fhdr.src_addr[i] = ((uint8_t *)random_mac_addr)[i];
+        this->beacon_fhdr.bssid[i] = ((uint8_t *)random_mac_addr)[i];
     }
 }
 
@@ -70,8 +71,11 @@ BeaconFlood::BeaconFlood()
 BeaconFlood::BeaconFlood(const uint8_t ap_mac_addr[6])
 {
     this->gen = std::mt19937(rd());
-    this->dis = std::uniform_int_distribution<size_t>(1, 32);
+    this->dis_ssid = std::uniform_int_distribution<size_t>(1, 32);
+    this->dis_mac = std::uniform_int_distribution<size_t>(1, RAND_MAX);
 
+    this->random_ssid_pool = RANDOM_SSID_CHAR_POOL;
+    
     this->init_flood_pkt();
     for (size_t i = 0; i < 6; i++)
     {
@@ -105,7 +109,7 @@ beacon_flood_pkt* BeaconFlood::make_flood_packet()
 
     beacon_flood_pkt* flood_pkt = (beacon_flood_pkt*)malloc(sizeof(beacon_flood_pkt));
     flood_pkt->size = flood_pkt_size;
-    flood_pkt->packet = (u_char*)calloc(flood_pkt_size, sizeof(uint8_t));
+    flood_pkt->packet = (u_char*)malloc(flood_pkt->size);
     std::memcpy(
         flood_pkt->packet,
         &(this->rtap_hdr),
@@ -155,10 +159,20 @@ beacon_flood_pkt* BeaconFlood::make_flood_packet()
 */
 beacon_flood_pkt* BeaconFlood::get_random_flood_pkt()
 {
-    this->ssid = this->get_random_ssid(this->dis(this->gen));
+    this->ssid = this->get_random_ssid(this->dis_ssid(this->gen));
+
+    uint8_t* random_mac_addr = this->get_random_mac_addr();
+    for (size_t i = 0; i < 6; i++)
+    {
+        this->beacon_fhdr.src_addr[i] = random_mac_addr[i];
+        this->beacon_fhdr.bssid[i] = random_mac_addr[i];
+    }
+    free(random_mac_addr);
+
     beacon_flood_pkt* pkt = make_flood_packet();
     return pkt;
 }
+
 /**
  * @brief 특정 SSID를 가지는 beacon-flood 패킷을 생성하여 반환.
  * 
@@ -169,4 +183,18 @@ beacon_flood_pkt* BeaconFlood::get_flood_pkt(const std::string& ssid)
     this->ssid = ssid;
     beacon_flood_pkt* pkt = make_flood_packet();
     return pkt;
+}
+
+/**
+ * @brief 랜덤 MAC 주소를 생성하여 반환.
+ * 
+ * @ref https://gitlab.com/gilgil/send-arp-test/-/blob/master/src/mac.cpp
+*/
+uint8_t* BeaconFlood::get_random_mac_addr()
+{
+    uint8_t* random_mac_addr = (uint8_t*)malloc(sizeof(uint8_t) * 6);
+	for (int i = 0; i < 6; i++)
+		random_mac_addr[i] = uint8_t(this->dis_mac(this->gen));
+	random_mac_addr[0] &= 0x7F;
+	return random_mac_addr;
 }

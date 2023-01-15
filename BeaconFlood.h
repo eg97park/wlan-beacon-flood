@@ -24,7 +24,7 @@ const uint64_t SAMPLE_BEACON_INTERVAL = 0x6400;
 /**
  * @brief 랜덤 SSID 생성에 사용될 문자.
 */
-const std::string random_ssid_pool("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+const std::string RANDOM_SSID_CHAR_POOL("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
 
 /**
  * @brief class BeaconFlood의 반환 값에 사용될 구조체.
@@ -44,7 +44,10 @@ class BeaconFlood
 private:
     std::random_device rd;
     std::mt19937 gen;
-    std::uniform_int_distribution<size_t> dis;
+    std::uniform_int_distribution<size_t> dis_ssid;
+    std::uniform_int_distribution<size_t> dis_mac;
+
+    std::string random_ssid_pool;
 
     static const dot11_radiotap_hdr rtap_hdr;
     dot11_beacon_fhdr beacon_fhdr;
@@ -57,6 +60,8 @@ private:
      * @ref https://stackoverflow.com/questions/47977829/generate-a-random-string-in-c11
     */
     std::string get_random_ssid(size_t length);
+
+    uint8_t* get_random_mac_addr();
 
 public:
     BeaconFlood();
