@@ -1,22 +1,29 @@
-TARGET=beacon-flood
-LDLIBS += -lpcap
-CXX = g++
-CXXFLAGS = -O0 -g -std=c++17
+PROG=beacon-flood
 
-all: $(TARGET)
+CXX=g++
+CXXFLAGS=-c -g -std=c++17 -O0
+LDLIBS+=-lpcap
 
-pch.o: pch.h pch.cpp
+SRCS=$(wildcard *.cpp)
+OBJS=$(SRCS:.cpp=.o)
 
-main.o: pch.h wlanhdr.h tools.h main.cpp
+PRECOMPILED_HEADER=pch.h
+PCH_TARGET=$(PRECOMPILED_HEADER).gch
+CXXFLAGS+=-include $(PRECOMPILED_HEADER)
 
-wlanhdr.o: pch.h wlanhdr.h wlanhdr.cpp
 
-BeaconFlood.o: pch.h BeaconFlood.h BeaconFlood.cpp
+all: $(PROG)
 
-tools.o: pch.h tools.h tools.cpp
+$(PCH_TARGET): $(PRECOMPILED_HEADER)
+	$(CXX) $(CXXFLAGS) -MP -MMD -MT $(@:.gch=.d) -o $@ $<
 
-$(TARGET): pch.o wlanhdr.o BeaconFlood.o tools.o main.o
-	$(CXX) pch.o wlanhdr.o wlanhdr.o BeaconFlood.o tools.o main.o -o $(TARGET) $(LOADLIBES) $(LDLIBS)
+$(PROG): $(OBJS)
+	$(CXX) $(OBJS) -o $(PROG) $(LDLIBS)
 
+%.o: %.cpp $(PCH_TARGET)
+	$(CXX) $(CXXFLAGS) -MP -MMD -MT $(@:.o=.d) -o $@ $< 
+	
 clean:
-	rm -f $(TARGET) *.o
+	rm -f $(OBJS) $(PROG) $(PCH_TARGET) $(PCH_TARGET:.gch)
+
+.PHONY: clean all
